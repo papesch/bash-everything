@@ -1,0 +1,49 @@
+#!/bin/bash
+set +x
+set +eu
+print_usage(){
+  echo "Usage: getai <AirAccrualEngine-log>"
+  echo "Extracts TEMv1x4 from AirAccrualEngine log and prints info from a few elements"
+  exit
+}  
+[ $1 ] || { print_usage ; }
+LOGFILE=$1
+WORK=$( mktemp /tmp/$(basename $0).XXXXX ) || exit 1
+
+parse_log(){
+  STR1='ProcessingUtil - Retrieved TicketEvent Message From queue\\(LQ.ACRP.ACCRUAL.TKTSALES\\):'
+  STR2="TicketEventUtil - About to parse incoming request"
+
+# Merge TEM xml into 1 line, strip namespace crud, then grab the fields I want with xpath.
+#awk "/${STR1}/,/${STR2}/" $LOGFILE \
+#  awk "/${STR1}/,/${STR2}/" $LOGFILE \
+  awk "/ProcessingUtil - Retrieved TicketEvent Message From queue\(LQ.ACRP.ACCRUAL.TKTSALES\):/,/${STR2}/" $LOGFILE \
+    | sed -e :a -e '$!N; s/\n/ /; ta' \
+    | sed -e 's,</TicketEventMessage> 2018.*$,</TicketEventMessage>,' \
+    | awk -F"${STR1}" 'NF>1 {print $2}' \
+    | sed 's,\( xmlns[^>]*\),,g; s,\( xsi:type[^>]*\),,g; s,ns:,,g' > $WORK
+  xmllint --shell $WORK <<EOF
+xpath /TicketEventMessage/Ticket/MasterTicket/TicketNumber/text()
+xpath /TicketEventMessage/EventType/text()
+xpath /TicketEventMessage/PNRHeader/PNRAddress/text()
+xpath /TicketEventMessage/Passenger/PassengerName/Surname/text()
+xpath /TicketEventMessage/Passenger/PassengerName/GivenName/text()
+xpath /TicketEventMessage/Passenger/FrequentFlyerInfo/FrequentFlierCompanyIdentification/text()
+xpath /TicketEventMessage/Passenger/FrequentFlyerInfo/FrequentTravellerId/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[*]/CouponSequenceNumber/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[*]/FlightDetails/FlightTypeInd/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[*]/FlightDetails/DepartureAirport/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[*]/FlightDetails/ScheduledDepartureDateTime/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[*]/FlightDetails/ArrivalAirport/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[*]/FlightDetails/ScheduledArrivalDateTime/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[*]/CouponFlightStatus/text()
+EOF
+#/TicketEventMessage/Ticket/MasterTicket/Coupon[2]/FrequentFlyerInfo/FQTType/text()
+}
+
+parse_log | grep content | sed 's,    content=,,g'
+#    | sed -e :a -e '$!N; s/\n/ /; ta' 
+#rm $WORK
+echo
+exit
+

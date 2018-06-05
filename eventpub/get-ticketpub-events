@@ -1,0 +1,67 @@
+#!/bin/bash
+#set +e
+print_usage(){
+  echo "Usage: get-ticketpub-events"
+  echo "Iterate over retreived dirs/files and extract Ticket Event XML or JSON"
+  echo "Run it in a directory created by pull-ticketpub-logs script, e.g. TicketEvents-20180524"
+}
+[ $1 ] && { print_usage ; exit ; }
+
+# do extracts for publishers v1
+main(){
+  get_pub1_xml 904-ticketpub
+  get_pub1_xml 905-ticketpub
+  get_pub2_json 904-ticketpub2
+  get_pub2_json 905-ticketpub2
+}
+
+get_pub1_xml(){
+  pubd=$1
+  logpattern="mule-ticketEventPublisher.log"
+  # if directory exists, cd into it and start work
+  if [ -d $pubd ]
+  then
+    echo $pubd
+    cd $pubd
+    gunzip $logpattern*
+    # iterate over the logs, call the extract script
+    for log in `ls $logpattern*`
+    do
+      ../../scripts/getpubxml $log
+      gzip $log
+    done
+    # move resulting XML files to new directory
+    mkdir event
+    mv *pub1-xml* event/
+    cd ..
+  else
+    ls -d $pubd
+  fi
+}
+
+get_pub2_json(){
+  pubd=$1
+  logpattern="mule-TicketEventPublisherV2.log"
+  # if directory exists, cd into it and start work
+  if [ -d $pubd ]
+  then
+    echo $pubd
+    cd $pubd
+    gunzip $logpattern*
+    # iterate over the logs, call the extract script
+    for log in `ls $logpattern*`
+    do
+      ../../scripts/getpubjson $log
+      gzip $log
+    done
+    # move resulting JSON files to new directory
+    mkdir event
+    mv *pub2-json* event/
+    cd ..
+  else
+    ls -d $pubd
+  fi
+}
+
+main $@
+echo "done."

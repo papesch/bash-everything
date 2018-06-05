@@ -1,0 +1,5 @@
+shuf -n999 matched_evttkt_regex > matched_evttkt_regex_999
+grep -h -f prod-match-data/matched_evttkt_regex_999 akl0mw904-ticketpub2/json/* > prod-json-999
+grep -h -f prod-match-data/matched_evttkt_regex_999 akl0mw905-ticketpub2/json/* >> prod-json-999
+grep -h -f prod-match-data/matched_evttkt_regex_999 akl0mw904-ticketpub/xml/* > prod-xml-999
+grep -h -f prod-match-data/matched_evttkt_regex_999 akl0mw905-ticketpub/xml/* >> prod-xml-999

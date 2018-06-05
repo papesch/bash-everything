@@ -1,0 +1,23 @@
+#!/bin/bash
+set -x 
+set -eu
+print_usage(){
+  echo "Usage: getairxml <AirAccrualEngine-log>"
+  echo "Extracts TicketEventMessageV1x4 XML from AirAccrualEngine log, one TEM per line of the file."
+}  
+
+[ $1 ] || { print_usage ; exit ; }
+[ -f $1 ] || { `ls $1` ; exit ; }
+tem1_log=$1
+tem1_xml=$( mktemp $tem1_log.tem1-xml.XXX ) || exit 1
+string1='ProcessingUtil - Retrieved TicketEvent Message From queue'
+# merge TEM xml into 1 line:
+#  - match only the stuff between "$string1" and "</TicketEventMessage>"
+#  - strip leading spaces and join the xml into a single line
+#  - tidy up trailing/leading log crud
+awk "/${string1}/,/<\/TicketEventMessage>/" ${tem1_log} \
+  | sed 's/^ *//' | tr -d '\n' \
+  | sed $'s,</TicketEventMessage>2018,</TicketEventMessage>\\\n2018,g' \
+  | awk -F"${string1}" 'NF>1 {print $2}' \
+  | sed 's/(LQ.ACRP.ACCRUAL.TKTSALES)://' \
+  > ${tem1_xml}

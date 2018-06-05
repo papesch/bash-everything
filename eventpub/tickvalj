@@ -1,0 +1,17 @@
+#!/bin/bash
+#set -x #debug
+set -eu
+print_usage(){
+  echo "Usage: tickvalx <TicketEventPublisher-log-XML-extract>"
+  echo "Extracts a few ticket values from TEMv1x4 data file for data matching"
+}  
+[ $1 ] || { print_usage ; exit ; }
+[ -f $1 ] || { `ls $1` ; exit ; }
+JSONFILE=$1
+VALTMP=$( mktemp /tmp/$(basename $0).XXX ) || exit 1
+VALFILE=$( echo $JSONFILE | sed 's/mule-TicketEventPublisherV2.log-/tickval./' )
+JQCMD=".AirNZ_TicketEvent.EventSummary.What.EventType, .AirNZ_TicketEvent.TicketEvents[0].TicketNumber"
+
+grep -f event_types_ok $JSONFILE | jq -r "$JQCMD" | paste - - > $VALTMP
+cat $VALTMP | tr -d '\015' | tr '\t' ' ' > $VALFILE
+rm $VALTMP

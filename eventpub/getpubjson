@@ -1,0 +1,19 @@
+#!/bin/bash
+#set +x
+set +eu
+print_usage(){
+  echo "Usage: getpubjson <TicketEventPublisherV2-log>"
+  echo "Extracts JSON from TicketEventPublisherV2 log, one TEM per line of the file."
+  exit
+}  
+[ $1 ] || { print_usage ; }
+[ -f $1 ] || { `ls $1` ; exit ; }
+pub2_log=$1
+pub2_json=$( mktemp ${pub2_log}.pub2-json.XXX ) || exit 1
+string1="LoggerMessageProcessor - Message read from input queue: "
+
+awk -F"${string1}" 'NF>1 {print $2}' ${pub2_log} > ${pub2_json}
+
+echo "new json file: ${pub2_json}"
+exit
+

@@ -1,0 +1,41 @@
+#!/bin/bash
+#set -x #debug
+set -eu
+print_usage(){
+  echo "Usage: tem1-extract-ffdata <xml-file>"
+  echo "Extracts a few ticket values from TEMv1x4 data file for data matching"
+}
+[ $1 ] || { print_usage ; exit ; }
+[ -f $1 ] || { `ls $1` ; exit ; }
+xmldata=$1
+tem1_extract=$( mktemp ./$(basename $0).${xmldata}.XXX ) || exit 1
+
+main(){
+  while read tem1; do
+    #strip namespace
+    this_tem=$( echo "${tem1}" | sed 's,\( xmlns[^>]*\),,g; s,\( xsi:type[^>]*\),,g; s,ns:,,g' )
+    parse_log "${this_tem}" | grep content | sed 's,    content=,,g' | tr '\n' ' '
+    echo
+  done < $xmldata
+  echo
+}
+
+parse_log(){
+  xmllint --shell <( echo "$1" ) <<EOF
+xpath /TicketEventMessage/PNRHeader/PNRAddress/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/TicketNumber/text()
+xpath /TicketEventMessage/EventType/text()
+xpath /TicketEventMessage/Passenger/FrequentFlyerInfo/FrequentTravellerId/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[1]/FrequentFlyerInfo/FrequentTravellerId/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[1]/CouponStatusCode/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[2]/FrequentFlyerInfo/FrequentTravellerId/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[2]/CouponStatusCode/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[3]/FrequentFlyerInfo/FrequentTravellerId/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[3]/CouponStatusCode/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[4]/FrequentFlyerInfo/FrequentTravellerId/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[4]/CouponStatusCode/text()
+EOF
+}
+
+main $@ > $tem1_extract
+echo "values extracted to $tem1_extract"

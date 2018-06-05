@@ -1,0 +1,22 @@
+#!/bin/bash
+#set -x #debug
+set -eu
+print_usage(){
+  echo "Usage: tickvalx <TicketEventPublisher-log-XML-extract>"
+  echo "Extracts a few ticket values from TEMv1x4 data file for data matching"
+}  
+
+[ $1 ] || { print_usage ; exit ; }
+[ -f $1 ] || { `ls $1` ; exit ; }
+XMLFILE=$1
+VALFILE=$( echo $XMLFILE | sed 's/mule-ticketEventPublisher.log-/tickval./' )
+grep -Po '(?<=<TicketNumber>)\w+(?=</TicketNumber>)|(?<=<EventType>)\w+(?=</EventType>)|(?<=<ns:EventType>)\w+(?=</ns:EventType>)' $XMLFILE \
+  | tr '\n' ' ' | sed 's/TicketBE/\n/g' | sed 's/^ //' \
+  > $VALFILE
+
+# xmllint sucks -- too slow
+#XMLTMP=$( mktemp /tmp/$(basename $0).XXX ) || exit 1 #use a temp file because xmllint sucks
+#sed 's,\( xmlns[^>]*\),,g; s,\( xsi:type[^>]*\),,g; s,ns:,,g' $XMLFILE > $XMLTMP  #strip namespace stuff because xmllint sucks
+#while read XML; do
+#xmllint --xpath "concat(/TicketEventMessage/Ticket/MasterTicket/TicketNumber/text(),' ',/TicketEventMessage/EventType/text())" -
+#done < $XMLTMP

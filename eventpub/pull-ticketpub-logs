@@ -1,0 +1,21 @@
+#!/bin/bash
+#set +e
+print_usage(){
+  echo "Usage: pull-ticketpub-logs <yyyymmdd>"
+  echo "Retrieves logs from prod directories for specified date"
+}
+[ $1 ] || { print_usage ; exit ; }
+logdate=$1
+
+# create local directories
+mkdir TicketEvents-$logdate
+cd TicketEvents-$logdate
+mkdir 904-ticketpub 904-ticketpub2 905-ticketpub 905-ticketpub2
+
+# retrieve logs from publisher v1
+scp akl0mw904.airnz.co.nz:/opt/P0_INT09_11/logs/ticketEventPublisher/mule-ticketEventPublisher.log-$logdate* 904-ticketpub/
+scp akl0mw905.airnz.co.nz:/opt/P0_INT09_21/logs/ticketEventPublisher/mule-ticketEventPublisher.log-$logdate* 905-ticketpub/
+
+# retrieve logs from publisher v2
+scp akl0mw904.airnz.co.nz:/opt/P0_INT45_11/logs/TicketEventPublisherV2/mule-TicketEventPublisherV2.log-$logdate* 904-ticketpub2/
+scp akl0mw905.airnz.co.nz:/opt/P0_INT45_21/logs/TicketEventPublisherV2/mule-TicketEventPublisherV2.log-$logdate* 905-ticketpub2/

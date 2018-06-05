@@ -1,0 +1,16 @@
+LSB-1020 AAEv2 EventTypes in the TEM                            BACKLOG             Saif
+LSB-1021 AAEv2 Handle "AccrualRequestMessage" from IFE          In Dev              Saif
+LSB-1022 AAEv2 Improve Splunk logging                           BACKLOG             Saif        
+LSB-1024 AAEv2 Component tests/automation                       BACKLOG             Saif        
+LSB-1026 AAEv2 could not send Error email                       Analysis Design     Saif        
+LSB-1030 AAEv2 parallel testing scripts comparing AAEv1/AAEv2   In Dev              Rob      
+LSB-1031 AAEv2 AAEv2 coupon filtering logic differs             BACKLOG             Saif        
+LSB-1032 AAEv2 AAEv2 AccruaPointsRQ missing second coupon       Ready for Dev       Saif        
+LSB-1046 TEMv2 AirPointsID not found in 1% of TicketEvents      BACKLOG             Chinmoy
+
+LSB-1035 AAEv2 build new application on WAS8.5                  done      
+LSB-1036 AAEv2 deploy to TEST environment(s)                    done
+LSB-1025 AAEv2 null pointer exception                           fixed
+LSB-1019 AAEv2 TimeZone offsets (+13:00 etc) not in TEMv2       rejected          
+LSB-1018 AAEv2 Can't connect to Test queues                     fixed
+

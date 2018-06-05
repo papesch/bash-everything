@@ -1,0 +1,64 @@
+#!/bin/bash
+#set +x
+set +eu
+print_usage(){
+  echo "Usage: getj <TicketEventPublisherV2-log>"
+  echo "Extracts JSON from TicketEventPublisherv2 log and prints info from a few elements"
+  exit
+}
+[ $1 ] || { print_usage ; }
+LOGFILE=$1
+AVALS=$( mktemp /tmp/$(basename $0).avals.$$.XXXXX ) || exit 1
+
+parse_log(){
+  LOGSTR="LoggerMessageProcessor - Message read from input queue: "
+
+  JQCMD=".AirNZ_TicketEvent.TicketEvents[0].TicketNumber"
+  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Booking.BookingReference"
+  JQCMD="$JQCMD, .AirNZ_TicketEvent.EventSummary.What.EventType"
+  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[0].DepartureAirportCode"
+  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[0].ScheduledDepDateLcl"
+  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[0].ScheduledDepTimeLcl"
+  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[0].ArrivalAirportCode"
+  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[0].ScheduledArrivalDateLcl"
+  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[0].ScheduledArrivalTimeLcl"
+  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[1].DepartureAirportCode"
+  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[1].ScheduledDepDateLcl"
+  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[1].ScheduledDepTimeLcl"
+  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[1].ArrivalAirportCode"
+  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[1].ScheduledArrivalDateLcl"
+  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[1].ScheduledArrivalTimeLcl"
+  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[2].DepartureAirportCode"
+  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[2].ScheduledDepDateLcl"
+  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[2].ScheduledDepTimeLcl"
+  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[2].ArrivalAirportCode"
+  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[2].ScheduledArrivalDateLcl"
+  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[2].ScheduledArrivalTimeLcl"
+  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[3].DepartureAirportCode"
+  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[3].ScheduledDepDateLcl"
+  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[3].ScheduledDepTimeLcl"
+  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[3].ArrivalAirportCode"
+  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[3].ScheduledArrivalDateLcl"
+  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[3].ScheduledArrivalTimeLcl"
+#  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[].FQTType"
+#  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Passenger.Surname"
+#  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Passenger.GivenName"
+#  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[0].FQTAirlineDesignatorCode"
+#  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[0].FQTFrequentFlyerNo"
+#  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[].CouponNumber"
+#  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[].CouponDomtIntInd"
+#  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].Coupons[].FlightStatus"
+#  JQCMD="$JQCMD, .AirNZ_TicketEvent.TicketEvents[0].IntegrationGUID"
+
+  echo "$1" | awk -F"${LOGSTR}" 'NF>1 {print $2}' | jq -r "${JQCMD}" \
+    | sed -e :a -e '$!N; s/\n/ /; ta' | sed 's, null,,g' \
+    | sed -E 's,([0-9]+-[0-9]+-[0-9]+) ([0-9]+:[0-9]+),\1T\2,g'
+
+}
+
+grep "$LOGSTR.*EventType...AVAL" $LOGFILE > $AVALS
+while read EVENT; do
+  parse_log "$EVENT"
+done < $AVALS
+echo
+exit

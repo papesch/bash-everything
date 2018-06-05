@@ -1,0 +1,21 @@
+#!/bin/bash
+#set -x #debug
+set -eu
+print_usage(){
+  echo "Usage: tem1-extract-ffnum <xml-file>"
+  echo "Extracts a few ticket values from TEMv1x4 data file for data matching"
+}
+[ $1 ] || { print_usage ; exit ; }
+[ -f $1 ] || { `ls $1` ; exit ; }
+xmldata=$1
+tem1_extract=$( mktemp ./$(basename $0).${xmldata}.XXX ) || exit 1
+# build parsing expression
+xparse="(?<=<PNRAddress>)\w+(?=</PNRAddress>)"
+xparse="$xparse|(?<=<TicketNumber>)\w+(?=</TicketNumber>)"
+xparse="$xparse|(?<=<EventType>)\w+(?=</EventType>)"
+xparse="$xparse|(?<=<ns:EventType>)\w+(?=</ns:EventType>)"
+xparse="$xparse|(?<=<FrequentTravellerId>)\w+(?=</FrequentTravellerId>)"
+
+grep -Po "$xparse" $xmldata \
+  | tr '\n' ' ' | sed 's/TicketBE/\n/g' | sed 's/^ //' > $tem1_extract
+echo "values extracted to $tem1_extract"

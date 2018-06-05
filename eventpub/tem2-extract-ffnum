@@ -1,0 +1,29 @@
+#!/bin/bash
+#set -x #debug
+set -eu
+print_usage(){
+  echo "Usage: tem2-extract-ffnum <json-file>"
+  echo "Extracts a few ticket values from TEMv2 data file for data matching"
+}
+[ $1 ] || { print_usage ; exit ; }
+[ -f $1 ] || { `ls $1` ; exit ; }
+jsondata=$1
+tmp_extract=$( mktemp /tmp/$(basename $0).XXXXX ) || exit 1
+tem2_extract=$( mktemp ./$(basename $0).$jsondata.XXX ) || exit 1
+#jpath=".AirNZ_TicketEvent.EventSummary.What.EventCategory"
+jpath=".AirNZ_TicketEvent.TicketEvents[0].Booking.BookingReference"
+jpath="$jpath, .AirNZ_TicketEvent.TicketEvents[0].TicketNumber"
+jpath="$jpath, .AirNZ_TicketEvent.EventSummary.What.EventType"
+jpath="$jpath, .AirNZ_TicketEvent.TicketEvents[0].Coupons[0].FQTFrequentFlyerNo"
+jpath="$jpath, .AirNZ_TicketEvent.TicketEvents[0].Coupons[0].CouponCARINAStatus"
+jpath="$jpath, .AirNZ_TicketEvent.TicketEvents[0].Coupons[1].FQTFrequentFlyerNo"
+jpath="$jpath, .AirNZ_TicketEvent.TicketEvents[0].Coupons[1].CouponCARINAStatus"
+jpath="$jpath, .AirNZ_TicketEvent.TicketEvents[0].Coupons[2].FQTFrequentFlyerNo"
+jpath="$jpath, .AirNZ_TicketEvent.TicketEvents[0].Coupons[2].CouponCARINAStatus"
+jpath="$jpath, .AirNZ_TicketEvent.TicketEvents[0].Coupons[3].FQTFrequentFlyerNo"
+jpath="$jpath, .AirNZ_TicketEvent.TicketEvents[0].Coupons[3].CouponCARINAStatus"
+
+jq -r "$jpath" $jsondata | paste - - - - - - - - - - - > $tmp_extract
+cat $tmp_extract | tr -d '\015' | tr '\t' ' ' | sed 's/ null//g' > $tem2_extract
+#rm $tmp_extract
+echo "values extracted to $tem2_extract"

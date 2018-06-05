@@ -1,0 +1,100 @@
+#!/bin/bash
+#set -x #debug
+set -eu
+print_usage(){
+  echo "Usage: geti <TicketEventPublisher-log>"
+  echo "Extracts TEMv1x4 from TicketEventPublisher log and prints info from a few elements"
+}
+
+main(){
+  [ $1 ] || { print_usage ; exit ; }
+  [ -f $1 ] || { `ls $1` ; exit ; }
+  LOGFILE=$1
+  TOPLINES=$( mktemp /tmp/$(basename $0).toplines.$$.XXXXX ) || exit 1
+  XMLLINES=$( mktemp /tmp/$(basename $0).xmllines.$$.XXXXX ) || exit 1
+  TMPLINE=$( mktemp /tmp/$(basename $0).tmpline.$$.XXXXX ) || exit 1
+  AVALS=$( mktemp /tmp/$(basename $0).avals.$$.XXXXX ) || exit 1
+  extract_xml
+  echo "...printing selected ticket data:"
+  while read XML; do
+    echo "$XML" > $TMPLINE
+    parse_log "$TMPLINE" | grep content \
+      | sed 's,    content=,,g' \
+      | sed -e :a -e '$!N; s/\n/ /; ta' \
+      | sed 's,:00.000+13:00,,g' \
+      | sed 's,:00.000+12:00,,g'
+  done < $XMLLINES
+  #rm $TOPLINES $XMLLINES
+  echo
+}
+
+extract_xml(){
+  STR1="Transformed carina CML message into a V1x4 ticket event XML message for publishing: "
+  STR2="CustomJms11SupportWithPatchFor7018 - Using non-JNDI destination TicketV1x4, will create one now"
+  echo "...looking for AVALs"
+  grep '<TTT>AVAL' $LOGFILE | head -100 | awk '{print $6}' | sed 's,\[,,;s,-\],,' > $AVALS
+  while read STR0 ; do
+    # STR0 is the process thread associated with an AVAL
+    # Find matching TEM line for STR0
+    grep -n "$STR0.*$STR1" $LOGFILE | awk -F: '{print $1}' >> $TOPLINES
+  done < $AVALS
+  avalcount=`wc -l $TOPLINES|awk '{print $1}'`
+  echo "...found $avalcount AVALs, $AVALS"
+  echo "...extracting TEMv1x4 XML:"
+  x=1
+  while read i ; do
+    echo -ne "\r$((x++)) of $avalcount"
+    # merge TEM xml into 1 line, strip out namespace crud
+    #  - capture up to 999 lines of the TEM
+    #  - match only the stuff between STR1 and STR2
+    #  - strip leading spaces and join the xml into a single line
+    #  - tidy up trailing log crud
+    #  - tidy up leading log crud
+    #  - strip namespace crud
+
+    sed -n "$i,$((i+999))p" $LOGFILE \
+      | awk "/${STR1}/{a=1};a;/${STR2}/{exit}" \
+      | sed 's/^ *//' | sed -e :a -e '$!N; s/\n//; ta' \
+      | sed -e 's,</TicketEventMessage>2018.*$,</TicketEventMessage>,' \
+      | awk -F"${STR1}" 'NF>1 {print $2}' \
+      | sed 's,\( xmlns[^>]*\),,g; s,\( xsi:type[^>]*\),,g; s,ns:,,g' >> $XMLLINES
+  done < $TOPLINES
+  echo
+  xmlcount=`wc -l $XMLLINES|awk '{print $1}'`
+  echo "...extracted & merged $xmlcount TEMs, $XMLLINES"
+}
+
+parse_log(){
+  xmllint --shell "$1" <<EOF
+xpath /TicketEventMessage/Ticket/MasterTicket/TicketNumber/text()
+xpath /TicketEventMessage/PNRHeader/PNRAddress/text()
+xpath /TicketEventMessage/EventType/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[1]/FlightDetails/DepartureAirport/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[1]/FlightDetails/ScheduledDepartureDateTime/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[1]/FlightDetails/ArrivalAirport/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[1]/FlightDetails/ScheduledArrivalDateTime/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[2]/FlightDetails/DepartureAirport/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[2]/FlightDetails/ScheduledDepartureDateTime/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[2]/FlightDetails/ArrivalAirport/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[2]/FlightDetails/ScheduledArrivalDateTime/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[3]/FlightDetails/DepartureAirport/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[3]/FlightDetails/ScheduledDepartureDateTime/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[3]/FlightDetails/ArrivalAirport/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[3]/FlightDetails/ScheduledArrivalDateTime/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[4]/FlightDetails/DepartureAirport/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[4]/FlightDetails/ScheduledDepartureDateTime/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[4]/FlightDetails/ArrivalAirport/text()
+xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[4]/FlightDetails/ScheduledArrivalDateTime/text()
+EOF
+#xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[2]/FrequentFlyerInfo/FQTType/text()
+#xpath /TicXMLketEventMessage/Passenger/PassengerName/Surname/text()
+#xpath /TicketEventMessage/Passenger/PassengerName/GivenName/text()
+#xpath /TicketEventMessage/Passenger/FrequentFlyerInfo/FrequentFlierCompanyIdentification/text()
+#xpath /TicketEventMessage/Passenger/FrequentFlyerInfo/FrequentTravellerId/text()
+#xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[*]/CouponSequenceNumber/text()
+#xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[*]/FlightDetails/FlightTypeInd/text()
+#xpath /TicketEventMessage/Ticket/MasterTicket/Coupon[*]/CouponFlightStatus/text()
+}
+
+main $@
+exit

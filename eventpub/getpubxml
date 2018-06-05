@@ -1,0 +1,26 @@
+#!/bin/bash
+#set -x 
+set -eu
+print_usage(){
+  echo "Usage: getpubxml <TicketEventPublisher-log>"
+  echo "Extracts TicketEventMessageV1x4 XML from TicketEventPublisher log, one TEM per line of the file."
+}  
+
+[ $1 ] || { print_usage ; exit ; }
+[ -f $1 ] || { `ls $1` ; exit ; }
+pub1_log=$1
+pub1_xml=$( mktemp $pub1_log.pub1-xml.XXX ) || exit 1
+string1="Transformed carina CML message into a V1x4 ticket event XML message for publishing: "
+# merge TEM xml into 1 line:
+#  - match only the stuff between "$string1" and "</TicketEventMessage>"
+#  - strip leading spaces and join the xml into a single line
+#  - tidy up trailing/leading log crud
+awk "/${string1}/,/<\/TicketEventMessage>/" ${pub1_log} \
+  | sed 's/^ *//' | tr -d '\n' \
+  | sed $'s,</TicketEventMessage>2018,</TicketEventMessage>\\\n2018,g' \
+  | awk -F"${string1}" 'NF>1 {print $2}' \
+  > ${pub1_xml}
+
+echo "new xml file: ${pub1_xml}"
+exit
+

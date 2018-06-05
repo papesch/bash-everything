@@ -1,0 +1,4 @@
+#grep -v NEWT tem1-ffcoupons-20180515 | sort > tem1-ffcoupons-20180515.sort
+#grep -v NEWT tem2-ffcoupins-20180515 | sort > tem2-ffcoupons-20180515.sort
+#join -j 2 <(sort -u tem1-ffcoupons-20180515.sort) <(sort -u tem2-ffcoupons-20180515.sort) -o 2.2,2.1 > production_matched_events
+comm -12 tem1-ffcoupons-15may.123 tem2-ffcoupons-15may.123 > match3-15may

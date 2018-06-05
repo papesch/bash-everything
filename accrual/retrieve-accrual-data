@@ -1,0 +1,19 @@
+#!/bin/bash
+#set +e
+print_usage(){
+  echo "Usage: retrieve-accrual-data"
+  echo "Iterate over AAE logs and AccruePoints XML"
+}
+[ $1 ] && { print_usage ; exit ; }
+
+# do extracts for all logs in local directory
+main(){
+  logpattern="airaccrualengine.log"
+  for log in `ls $logpattern*`
+  do
+    ../../scripts/get-accrual-rq.sh $log
+  done
+}
+
+main $@
+echo "done."
