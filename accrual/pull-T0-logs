@@ -13,7 +13,7 @@ cd AirAccruals-$logdate-T0
 mkdir 704-accrualeng1 715-accrualeng2
 
 # retrieve logs from air accrual engine v1
-scp aklia704.airnz.co.nz:/opt/was/T0_APP02_11/AirAccrualEngine/logs/airaccrualengine.log.$logdate* 704-accrualeng1/
+scp aklia704.redacted.com:/opt/was/T0_APP02_11/AirAccrualEngine/logs/airaccrualengine.log.$logdate* 704-accrualeng1/
 
 # retrieve logs from air accrual engine v2
-scp akl0ia715.airnz.co.nz:/opt/was/T0_APP24_11/AirAccrualEngine/logs/airaccrualengine.log.$logdate* 715-accrualeng2/
+scp akl0ia715.redacted.com:/opt/was/T0_APP24_11/AirAccrualEngine/logs/airaccrualengine.log.$logdate* 715-accrualeng2/

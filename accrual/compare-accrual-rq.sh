@@ -5,7 +5,7 @@
 # 1. get-accrual-rq.sh
 # 2. prep-accrual-rq.sh
 # 3. compare-accrual-rq.sh
-# Design notes: https://jira.airnz.co.nz/browse/LSB-1030
+# Design notes: https://jira.redacted.com/browse/LSB-1030
 #set -e #causes script to exit if diff returns -1!!!
 #set -x #debug
 set -u #warn if unbound variable found
